@@ -25,6 +25,7 @@ async function run() {
     await client.connect();
     const db = client.db('doc_appoint')
     const doctorData = db.collection('data')
+    const appointmentCollection = db.collection('appointments');
 
     app.get('/all-appointment', async (req, res) => {
       const cursor = doctorData.find();
@@ -34,13 +35,22 @@ async function run() {
 
     app.get('/all-appointment/:id', async (req, res) => {
       const id = req.params.id;
-      console.log(id);
-
       const query = { _id: new ObjectId(id) };
       const user = await doctorData.findOne(query);
-
       res.send(user);
     });
+
+    app.post('/appointments', async(req, res) => {
+        const newAppointment = req.body
+        const result = await appointmentCollection.insertOne(newAppointment)
+        res.send(result)
+    })
+
+    app.get('/appointments', async (req, res) => {
+      const cursor = appointmentCollection.find();
+      const result = await cursor.toArray();
+      res.send(result)
+    })
 
 
     await client.db("admin").command({ ping: 1 });
