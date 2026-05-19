@@ -40,10 +40,10 @@ async function run() {
       res.send(user);
     });
 
-    app.post('/appointments', async(req, res) => {
-        const newAppointment = req.body
-        const result = await appointmentCollection.insertOne(newAppointment)
-        res.send(result)
+    app.post('/appointments', async (req, res) => {
+      const newAppointment = req.body
+      const result = await appointmentCollection.insertOne(newAppointment)
+      res.send(result)
     })
 
     app.get('/appointments', async (req, res) => {
@@ -51,6 +51,31 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result)
     })
+
+    app.patch('/appointments/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+
+        const filter = {
+          _id: new ObjectId(id)
+        };
+
+        const updatedDocument = {
+          $set: req.body
+        };
+
+        const result = await appointmentCollection.updateOne(
+          filter,
+          updatedDocument
+        );
+
+        res.send(result);
+
+      } catch (error) {
+        console.log(error);
+        res.status(500).send({ message: "Update failed" });
+      }
+    });
 
 
     await client.db("admin").command({ ping: 1 });
