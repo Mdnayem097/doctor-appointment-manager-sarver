@@ -1,7 +1,8 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express')
 const dotenv = require('dotenv')
-const cors = require('cors')
+const cors = require('cors');
+const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
 
 
 dotenv.config()
@@ -20,6 +21,29 @@ const client = new MongoClient(uri, {
   }
 });
 
+const jwks = createRemoteJWKSet(
+  new URL('http://localhost:3000/api/auth/jwks')
+)
+
+const verifyToken = async (req, res, next) => {
+  const header = req?.headers.authorization
+  if (!header) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  const token = header.split(" ")[1]
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  try {
+    const { payload } = await jwtVerify(token, jwks)
+    console.log(payload)
+    next()
+  } catch (error) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+}
+
 async function run() {
   try {
     await client.connect();
@@ -34,7 +58,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/all-appointment/:id', async (req, res) => {
+    app.get('/all-appointment/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const user = await doctorData.findOne(query);
@@ -47,7 +71,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/appointments', async (req, res) => {
+    app.get('/appointments', verifyToken, async (req, res) => {
       const cursor = appointmentCollection.find();
       const result = await cursor.toArray();
       res.send(result)
