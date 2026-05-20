@@ -26,6 +26,7 @@ async function run() {
     const db = client.db('doc_appoint')
     const doctorData = db.collection('data')
     const appointmentCollection = db.collection('appointments');
+    const usersCollection = db.collection("user");
 
     app.get('/all-appointment', async (req, res) => {
       const cursor = doctorData.find();
@@ -78,13 +79,37 @@ async function run() {
     });
 
     app.delete('/appointments/:id', async (req, res) => {
-        const id = req.params.id;
-        const query = {
-            _id: new ObjectId(id)
-        }
-        const result = await appointmentCollection.deleteOne(query);
-        res.send(result);
+      const id = req.params.id;
+      const query = {
+        _id: new ObjectId(id)
+      }
+      const result = await appointmentCollection.deleteOne(query);
+      res.send(result);
     })
+
+    app.patch("/users/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+
+        const updatedData = req.body;
+
+        const result = await usersCollection.updateOne(
+          { email: email },
+          {
+            $set: {
+              name: updatedData.name,
+              image: updatedData.image,
+            },
+          }
+        );
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          message: error.message,
+        });
+      }
+    });
 
 
     await client.db("admin").command({ ping: 1 });
