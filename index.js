@@ -72,7 +72,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/appointments', async (req, res) => {
+    app.get('/appointments', verifyToken, async (req, res) => {
       const cursor = appointmentCollection.find();
       const result = await cursor.toArray();
       res.send(result)
