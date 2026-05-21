@@ -22,7 +22,7 @@ const client = new MongoClient(uri, {
 });
 
 const jwks = createRemoteJWKSet(
-  new URL('http://localhost:3000/api/auth/jwks')
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
 )
 
 const verifyToken = async (req, res, next) => {
@@ -31,6 +31,7 @@ const verifyToken = async (req, res, next) => {
     return res.status(401).json({ message: 'Unauthorized' });
   }
   const token = header.split(" ")[1]
+  console.log("TOKEN:", token);
   if (!token) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
@@ -46,7 +47,7 @@ const verifyToken = async (req, res, next) => {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const db = client.db('doc_appoint')
     const doctorData = db.collection('data')
     const appointmentCollection = db.collection('appointments');
@@ -71,7 +72,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/appointments', verifyToken, async (req, res) => {
+    app.get('/appointments', async (req, res) => {
       const cursor = appointmentCollection.find();
       const result = await cursor.toArray();
       res.send(result)
@@ -113,7 +114,7 @@ async function run() {
 
     app.patch("/users/:email", async (req, res) => {
       try {
-        const email = req.params.email;
+        const email = req.params.email.toLowerCase().trim();
 
         const updatedData = req.body;
 
@@ -136,7 +137,7 @@ async function run() {
     });
 
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // await client.close();
